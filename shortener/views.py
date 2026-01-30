@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.urls import reverse
 from django.utils import timezone
+from django.db.models import F
 from .forms import ShortURLForm, CustomShortURLForm, UserRegistrationForm
 import qrcode
 
@@ -31,7 +32,7 @@ def user_login(request):
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
-        user = authenticate(request, usernaminite=username, password=password)
+        user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             return redirect('dashboard')
@@ -108,16 +109,19 @@ def delete_url(request, pk):
     return render(request, 'delete_url.html', {'url': url_obj})
 
 def redirect_url(request, short_key):
-    try:
-        url_obj = ShortURL.objects.get(short_key=short_key)
-        if url_obj.is_expired():
-            messages.error(request, 'This short URL has expired.')
-            return redirect('login')  # Or a custom expired page
-        url_obj.click_count += 1
-        url_obj.save()
-        return HttpResponseRedirect(url_obj.original_url)
-    except ShortURL.DoesNotExist:
-        raise Http404("Short URL not found.")
+    url_obj = get_object_or_404(
+        ShortURL,
+        short_key=short_key,
+    )
+
+    if url_obj.is_expired():
+        raise Http404("Short URL expired")
+
+    ShortURL.objects.filter(pk=url_obj.pk).update(
+        click_count=F('click_count') + 1
+    )
+
+    return redirect(url_obj.original_url)
 
 @login_required
 def generate_qr(request, pk):
