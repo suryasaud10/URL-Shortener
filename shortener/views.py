@@ -48,7 +48,7 @@ def user_logout(request):
 @login_required
 def dashboard_view(request):
     urls = ShortURL.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'dashboard.html')
+    return render(request, 'dashboard.html',{'urls' : urls})
 
 
 @login_required
