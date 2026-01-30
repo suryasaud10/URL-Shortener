@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - URL Shortener{% endblock %}
+{% block content %}
+<h2>Your Short URLs</h2>
+<p>Manage your created URLs below. Click the short URL to test it.</p>
+{% if urls %}
+<table>
+    <thead>
+        <tr>
+            <th>Original URL</th>
+            <th>Short URL</th>
+            <th>Created</th>
+            <th>Clicks</th>
+            <th>Expires</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for url in urls %}
+        <tr>
+            <td><a href="{{ url.original_url }}" target="_blank">{{ url.original_url|truncatechars:50 }}</a></td>
+            <td><a href="{% url 'redirect_url' url.short_key %}" target="_blank">{{ request.get_host }}{% url 'redirect_url' url.short_key %}</a></td>
+            <td>{{ url.created_at|date:"M d, Y H:i" }}</td>
+            <td>{{ url.click_count }}</td>
+            <td>{% if url.expiration_date %}{{ url.expiration_date|date:"M d, Y H:i" }}{% else %}Never{% endif %}</td>
+            <td>
+                <a href="{% url 'edit_url' url.pk %}" class="btn">Edit</a>
+                <a href="{% url 'delete_url' url.pk %}" class="btn btn-danger">Delete</a>
+                <a href="{% url 'generate_qr' url.pk %}" class="btn" target="_blank">QR Code</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No short URLs yet. <a href="{% url 'create_url' %}">Create one now</a>!</p>
+{% endif %}
+{% endblock %}
